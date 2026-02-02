@@ -94,10 +94,10 @@ export const messages = {
     urlAddedSuccessfully: "URL added successfully",
     failedToFetchUrl: "Failed to fetch URL",
     failedToAddUrl: "Failed to add URL",
-    userEmailAndProjectNameMandatory: "User Email and Project Name are mandatory!",
+    userEmailAndProjectNameMandatory: "User email and project name are mandatory!",
 
     userEmailRequiredBang: "User email is required!",
-    userEmailMandatoryBang: "User Email is mandatory!",
+    userEmailMandatoryBang: "User email is mandatory!",
 
     fillInGitHubUsername: "Please fill in GitHub username!",
     githubUsernameAddedSuccessfully: "GitHub username added successfully",
@@ -121,7 +121,7 @@ export const messages = {
     fillInUsernameEmailPassword: "Please fill in username, email and password!",
     passwordStrengthRequirements:
       "Password must be at least 8 characters long and should contain upper and lower case letters as well as numbers or special characters",
-    emailWrongFormat: "email has not the right format",
+    emailWrongFormat: "Email has not the right format",
     nameMinLength3: "Name must be at least 3 characters long",
 
     userRegisteredSuccessfully: "User registered successfully",

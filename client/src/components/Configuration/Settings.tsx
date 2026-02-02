@@ -28,7 +28,7 @@ const Settings: React.FC = () => {
   const [user, setUser] = useState<{
     name: string;
     email: string;
-    UserGithubUsername: string;
+    githubUsername: string;
   } | null>(null);
 
   useEffect(() => {
@@ -41,13 +41,13 @@ const Settings: React.FC = () => {
         setUser({
           name: userName,
           email: userEmail,
-          UserGithubUsername: "",
+          githubUsername: "",
         });
 
         try {
-          const githubUser = await usersApi.getGithubUsername(userEmail);
+          const githubUser = await usersApi.getGitHubUsername(userEmail);
           setGithubUsername(githubUser);
-          setUser((prev) => prev ? { ...prev, UserGithubUsername: githubUser } : null);
+          setUser((prev) => (prev ? { ...prev, githubUsername: githubUser } : null));
         } catch (error) {
           console.error("Error fetching user data:", error);
         }
@@ -128,7 +128,7 @@ const Settings: React.FC = () => {
     }
 
     try {
-      const data = await usersApi.updateGithubUsername({
+      const data = await usersApi.updateGitHubUsername({
         userEmail: user.email,
         newGithubUsername: githubUsername,
       });
@@ -140,7 +140,7 @@ const Settings: React.FC = () => {
           )
       );
       if (data.message.includes("successfully")) {
-        const updatedUser = { ...user, UserGithubUsername: githubUsername } as typeof user;
+        const updatedUser = { ...user, githubUsername: githubUsername };
         setUser(updatedUser);
       }
     } catch (error: unknown) {
@@ -274,7 +274,7 @@ const Settings: React.FC = () => {
                     {translate(msgKey.configuration.settings.labels.githubUsername)}
                   </p>
                   <p className="font-medium">
-                    {user?.UserGithubUsername || translate(msgKey.common.placeholders.notSet)}
+                    {user?.githubUsername || translate(msgKey.common.placeholders.notSet)}
                   </p>
                 </div>
                 <Dialog>

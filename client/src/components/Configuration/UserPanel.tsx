@@ -18,7 +18,7 @@ const UserPanel: React.FC = () => {
   const [user, setUser] = useState<{
     name: string;
     email: string;
-    UserGithubUsername: string;
+    githubUsername: string;
   } | null>(null);
 
   const fetchUserData = async () => {
@@ -30,13 +30,13 @@ const UserPanel: React.FC = () => {
       setUser({
         name: userName,
         email: userEmail,
-        UserGithubUsername: "",
+        githubUsername: "",
       });
 
       try {
-        const githubUser = await usersApi.getGithubUsername(userEmail);
+        const githubUser = await usersApi.getGitHubUsername(userEmail);
         setGithubUsername(githubUser);
-        setUser((prev) => prev ? { ...prev, UserGithubUsername: githubUser } : null);
+        setUser((prev) => (prev ? { ...prev, githubUsername: githubUser } : null));
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -121,7 +121,7 @@ const UserPanel: React.FC = () => {
     }
 
     try {
-      const data = await usersApi.updateGithubUsername({
+      const data = await usersApi.updateGitHubUsername({
         userEmail: user.email,
         newGithubUsername: githubUsername.trim(),
       });
@@ -133,7 +133,7 @@ const UserPanel: React.FC = () => {
           )
       );
       if (data.message.includes("successfully")) {
-        const updatedUser = { ...user, UserGithubUsername: githubUsername } as typeof user;
+        const updatedUser = { ...user, githubUsername: githubUsername };
         setUser(updatedUser);
       }
     } catch (error: unknown) {
