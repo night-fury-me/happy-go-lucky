@@ -21,8 +21,8 @@ const Settings: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
-  const [githubMessage, setGithubMessage] = useState("");
-  const [githubUsername, setGithubUsername] = useState("");
+  const [githubMessage, setGitHubMessage] = useState("");
+  const [githubUsername, setGitHubUsername] = useState("");
 
   const [user, setUser] = useState<{
     name: string;
@@ -45,7 +45,7 @@ const Settings: React.FC = () => {
 
         try {
           const githubUser = await usersApi.getGitHubUsername(userEmail);
-          setGithubUsername(githubUser);
+          setGitHubUsername(githubUser);
           setUser((prev) => (prev ? { ...prev, githubUsername: githubUser } : null));
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -105,24 +105,24 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleAddGithubUsername = async () => {
+  const handleAddGitHubUsername = async () => {
     if (!githubUsername) {
-      setGithubMessage("GitHub username cannot be empty");
+    setGitHubMessage("GitHub username cannot be empty");
       return;
     }
 
     if (!user?.email) {
-      setGithubMessage("User email not available");
+    setGitHubMessage("User email not available");
       return;
     }
 
     try {
       const data = await usersApi.updateGitHubUsername({
         userEmail: user.email,
-        newGithubUsername: githubUsername,
+        newGitHubUsername: githubUsername,
       });
 
-      setGithubMessage(data.message || "GitHub username added successfully!");
+  setGitHubMessage(data.message || "GitHub username added successfully!");
       if (data.message.includes("successfully")) {
         const updatedUser = { ...user, githubUsername: githubUsername };
         setUser(updatedUser);
@@ -130,7 +130,7 @@ const Settings: React.FC = () => {
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(error.message);
-        setGithubMessage(error.message);
+        setGitHubMessage(error.message);
       }
     }
   };
@@ -243,7 +243,7 @@ const Settings: React.FC = () => {
                         label="GitHub Username"
                         placeholder="Enter your GitHub username"
                         value={githubUsername}
-                        onChange={(e) => setGithubUsername(e.target.value)}
+                        onChange={(e) => setGitHubUsername(e.target.value)}
                       />
                       {githubMessage && (
                         <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
@@ -252,7 +252,7 @@ const Settings: React.FC = () => {
                       )}
                     </div>
                     <DialogFooter>
-                      <Button onClick={handleAddGithubUsername}>Confirm</Button>
+                      <Button onClick={handleAddGitHubUsername}>Confirm</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

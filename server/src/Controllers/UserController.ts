@@ -207,15 +207,16 @@ export class UserController implements IAppController {
   }
 
   async setUserGitHubUsername(req: Request, res: Response): Promise<void> {
-    const { userEmail, newGithubUsername } = req.body;
+    const { userEmail, newGitHubUsername, newGithubUsername: newGitHubUsernameLegacy } = req.body;
+    const githubUsername = newGitHubUsername ?? newGitHubUsernameLegacy;
 
     if (!userEmail) {
       res.status(400).json({ message: "User email is required!" });
       return;
     }
 
-    if (!newGithubUsername) {
-      res.status(400).json({ message: "Please fill in GitHub username!" });
+    if (!githubUsername) {
+  res.status(400).json({ message: "Please fill in GitHub username!" });
       return;
     }
 
@@ -231,10 +232,7 @@ export class UserController implements IAppController {
         throw error;
       }
 
-      await this.db.run(`UPDATE users SET githubUsername = ? WHERE id = ?`, [
-        newGithubUsername,
-        userId,
-      ]);
+      await this.db.run(`UPDATE users SET githubUsername = ? WHERE id = ?`, [githubUsername, userId]);
       res.status(200).json({ message: "GitHub username added successfully" });
     } catch (error) {
       console.error("Error adding GitHub username:", error);
