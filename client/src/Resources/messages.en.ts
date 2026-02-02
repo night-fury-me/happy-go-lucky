@@ -203,7 +203,7 @@ export const messagesEn = {
       dialogs: {
         changeEmail: "Change Email Address",
         changePassword: "Change Password",
-        editGithubUsername: "Edit GitHub Username",
+        editGitHubUsername: "Edit GitHub Username",
       },
       actions: {
         changeEmail: "Change Email",
@@ -311,12 +311,12 @@ export const messagesEn = {
         projects: (count: number) => `Projects (${count})`,
       },
       actions: {
-        create: "create",
-        addCourse: "add course",
-        addProject: "add project",
-        schedule: "schedule",
-        edit: "edit",
-        delete: "delete",
+        create: "Create",
+        addCourse: "Add Course",
+        addProject: "Add Project",
+        schedule: "Schedule",
+        edit: "Edit",
+        delete: "Delete",
       },
       tableHeadings: {
         id: "ID",
@@ -336,7 +336,7 @@ export const messagesEn = {
     userAdmin: {
       title: "User Admin",
       dialogs: {
-        editUser: "Edit user",
+        editUser: "Edit User",
       },
       labels: {
         username: "Username",
@@ -348,7 +348,7 @@ export const messagesEn = {
       },
       tooltips: {
         edit: "Edit",
-        sendConfirmationEmail: "Send confirmation email",
+        sendConfirmationEmail: "Send Confirmation Email",
       },
       tableHeadings: {
         username: "Username",

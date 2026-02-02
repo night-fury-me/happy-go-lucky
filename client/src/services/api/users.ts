@@ -96,7 +96,7 @@ const usersApi = {
 
   updateGitHubUsername: (body: {
     userEmail: string;
-    newGithubUsername: string;
+    newGitHubUsername: string;
   }): Promise<{ success: boolean; message: string }> => {
     return ApiClient.getInstance().post<{ success: boolean; message: string }>(
       "/user/githubUsername",
