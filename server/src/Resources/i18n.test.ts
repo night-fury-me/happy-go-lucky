@@ -8,7 +8,7 @@ async function importFreshI18n(env: Partial<NodeJS.ProcessEnv> = {}) {
   // Reset env back to original, then apply per-test overrides
   process.env = { ...ORIGINAL_ENV, ...env };
 
-  return await import("./i18n");
+  return await import("./i18n.js");
 }
 
 afterEach(() => {
