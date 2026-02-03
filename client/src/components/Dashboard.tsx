@@ -15,7 +15,6 @@ import AuthStorage from "@/services/storage/auth";
 import ProjectStorage from "@/services/storage/project";
 import projectsApi from "@/services/api/projects";
 import adminApi from "@/services/api/admin";
-import SystemStorage from "@/services/storage/system";
 import {
   Dialog,
   DialogContent,
@@ -33,9 +32,7 @@ const Dashboard: React.FC = () => {
   const [shutdownDialogOpen, setShutdownDialogOpen] = useState(false);
   const [shutdownPending, setShutdownPending] = useState(false);
   const [shutdownError, setShutdownError] = useState<string | null>(null);
-  const [shutdownInProgress, setShutdownInProgress] = useState(
-    SystemStorage.getInstance().isShutdownInProgress()
-  );
+  const [shutdownInProgress, setShutdownInProgress] = useState(false);
   const userRole = useUserRole();
 
   const authStorage = AuthStorage.getInstance();
@@ -70,21 +67,21 @@ const Dashboard: React.FC = () => {
   }, [navigate, authStorage]);
 
   useEffect(() => {
-    const onShutdownStateChange = () => {
-      const inProgress = SystemStorage.getInstance().isShutdownInProgress();
-      setShutdownInProgress(inProgress);
-      if (inProgress) {
-        setShutdownDialogOpen(false);
+    if (userRole !== "ADMIN") {
+      return;
+    }
+
+    const load = async () => {
+      try {
+        const status = await adminApi.getShutdownStatus();
+        setShutdownInProgress(Boolean(status.isShuttingDown));
+      } catch {
+        // ignore (e.g., server down)
       }
     };
 
-    window.addEventListener(SystemStorage.shutdownEventName(), onShutdownStateChange);
-    return () =>
-      window.removeEventListener(
-        SystemStorage.shutdownEventName(),
-        onShutdownStateChange
-      );
-  }, []);
+    void load();
+  }, [userRole]);
 
   const handleProjectChange = (projectName: string) => {
     setSelectedProject(projectName);
@@ -132,19 +129,19 @@ const Dashboard: React.FC = () => {
   }
 
   async function shutdownSystem() {
+    // Close dialog immediately for a clean UX.
+    setShutdownDialogOpen(false);
     setShutdownPending(true);
     setShutdownError(null);
 
     try {
       await adminApi.shutdown();
-      SystemStorage.getInstance().setShutdownInProgress(true);
-      setShutdownDialogOpen(false);
+      setShutdownInProgress(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Shutdown failed";
 
       if (message.toLowerCase().includes("shutting down")) {
-        SystemStorage.getInstance().setShutdownInProgress(true);
-        setShutdownDialogOpen(false);
+        setShutdownInProgress(true);
       } else {
         setShutdownError(message);
       }
@@ -154,8 +151,17 @@ const Dashboard: React.FC = () => {
   }
 
   function startSystem() {
-    SystemStorage.getInstance().setShutdownInProgress(false);
-    window.location.reload();
+    setShutdownPending(true);
+    setShutdownError(null);
+
+    adminApi
+      .start()
+      .then(() => setShutdownInProgress(false))
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : "Start failed";
+        setShutdownError(message);
+      })
+      .finally(() => setShutdownPending(false));
   }
 
   return (
@@ -235,7 +241,12 @@ const Dashboard: React.FC = () => {
               </Button>
 
               {shutdownInProgress ? (
-                <Button variant="success" className="w-48" onClick={startSystem}>
+                <Button
+                  variant="success"
+                  className="w-48"
+                  onClick={startSystem}
+                  disabled={shutdownPending}
+                >
                   Start system
                 </Button>
               ) : (

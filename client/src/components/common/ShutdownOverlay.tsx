@@ -1,6 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import Button from "@/components/common/Button";
-import SystemStorage from "@/services/storage/system";
 
 type ShutdownOverlayProps = {
   message?: string;
@@ -37,19 +35,6 @@ const ShutdownOverlay: React.FC<ShutdownOverlayProps> = ({
         <p className="mt-4 text-sm text-gray-700">
           This page is locked to prevent further changes.
         </p>
-
-        <div className="mt-6 flex justify-center">
-          <Button
-            variant="success"
-            className="w-48"
-            onClick={() => {
-              SystemStorage.getInstance().setShutdownInProgress(false);
-              window.location.reload();
-            }}
-          >
-            Start system
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -44,9 +44,6 @@ initializeDB(dbPath).then((db) => {
     }
   };
 
-  // Make shutdown callable from the AdminController.
-  app.locals.shutdownHandler = () => gracefulShutdown("admin endpoint");
-
   // Also handle OS signals (docker stop, Ctrl+C).
   process.on('SIGTERM', () => {
     void gracefulShutdown('SIGTERM');

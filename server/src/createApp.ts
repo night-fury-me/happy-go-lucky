@@ -26,15 +26,28 @@ export function createApp(db: Database): Application {
   app.use(bodyParser.json());
   app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 
-  // Global shutdown flag + handler. Once shutdown is initiated, reject new requests.
+  // Global shutdown flag. Once shutdown is initiated, reject write requests
+  // so the DB stays in a consistent state (read-only mode).
   app.locals.isShuttingDown = false;
-  app.locals.shutdownHandler = async () => {};
   app.use((req, res, next) => {
-    if (app.locals.isShuttingDown && req.path !== "/admin/shutdown") {
-      res.status(503).json({ message: "Server is shutting down" });
+    if (!app.locals.isShuttingDown) {
+      next();
       return;
     }
-    next();
+
+    const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+    const allowDuringShutdown = new Set([
+      "/admin/shutdown",
+      "/admin/start",
+      "/admin/shutdown/status",
+    ]);
+
+    if (allowDuringShutdown.has(req.path) || safeMethods.has(req.method.toUpperCase())) {
+      next();
+      return;
+    }
+
+    res.status(503).json({ message: "Writes are disabled while server is shutting down" });
   });
 
   app.get('/', (req, res) => {

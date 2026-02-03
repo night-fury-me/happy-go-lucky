@@ -6,15 +6,25 @@ import { checkAdmin } from "../Middleware/checkAdmin";
 /**
  * Administrative controller.
  *
- * Currently provides a graceful shutdown endpoint that:
- * - marks the app as "shutting down" (so new requests get rejected)
- * - triggers the configured shutdown handler (server close + DB close)
+ * Provides a shutdown mode endpoint that:
+ * - marks the app as "shutting down" (read-only mode)
+ * - blocks write requests while still allowing read requests
  */
 export class AdminController implements IAppController {
   constructor(private db: Database) {}
 
   init(app: Application): void {
+    app.get(
+      "/admin/shutdown/status",
+      checkAdmin(this.db),
+      this.getShutdownStatus.bind(this)
+    );
     app.post("/admin/shutdown", checkAdmin(this.db), this.shutdown.bind(this));
+    app.post("/admin/start", checkAdmin(this.db), this.start.bind(this));
+  }
+
+  async getShutdownStatus(req: Request, res: Response): Promise<void> {
+    res.status(200).json({ isShuttingDown: Boolean(req.app.locals.isShuttingDown) });
   }
 
   async shutdown(req: Request, res: Response): Promise<void> {
@@ -27,16 +37,19 @@ export class AdminController implements IAppController {
 
     app.locals.isShuttingDown = true;
 
-    // Respond first, then shut down asynchronously.
-    res.status(202).json({ success: true, message: "Shutdown initiated" });
+    // Enter read-only mode.
+    res.status(202).json({ success: true, message: "Shutdown mode enabled" });
+  }
 
-    const shutdownHandler = app.locals.shutdownHandler;
-    if (typeof shutdownHandler === "function") {
-      setImmediate(() => {
-        Promise.resolve(shutdownHandler()).catch((error: unknown) => {
-          console.error("Shutdown handler failed:", error);
-        });
-      });
+  async start(req: Request, res: Response): Promise<void> {
+    const app = req.app;
+
+    if (!app.locals.isShuttingDown) {
+      res.status(200).json({ success: true, message: "System already running" });
+      return;
     }
+
+    app.locals.isShuttingDown = false;
+    res.status(200).json({ success: true, message: "Shutdown mode disabled" });
   }
 }

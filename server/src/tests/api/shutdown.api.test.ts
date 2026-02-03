@@ -47,11 +47,17 @@ describe('System shutdown API', () => {
 
     expect(shutdownResponse.body.success).toBe(true);
 
-    const blocked = await request(app)
-      .get('/term')
+    // Read requests are still allowed.
+    await request(app).get('/term').expect(200);
+
+    // Write requests are blocked to keep DB consistent.
+    const blockedWrite = await request(app)
+      .post('/term')
+      .set('Authorization', createAuthHeader(adminToken))
+      .send({ termName: 'SS2099', displayName: 'Summer 2099' })
       .expect(503);
 
-    expect(blocked.body.message).toBe('Server is shutting down');
+    expect(blockedWrite.body.message).toMatch(/writes are disabled/i);
   });
 
   it('should be idempotent when called multiple times', async () => {
@@ -71,5 +77,30 @@ describe('System shutdown API', () => {
 
     expect(second.body.success).toBe(true);
     expect(second.body.message).toMatch(/already in progress/i);
+  });
+
+  it('should allow leaving shutdown mode', async () => {
+    const adminToken = generateAdminToken();
+
+    await request(app)
+      .post('/admin/shutdown')
+      .set('Authorization', createAuthHeader(adminToken))
+      .send({})
+      .expect(202);
+
+    await request(app)
+      .post('/admin/start')
+      .set('Authorization', createAuthHeader(adminToken))
+      .send({})
+      .expect(200);
+
+    // Writes should work again.
+    const created = await request(app)
+      .post('/term')
+      .set('Authorization', createAuthHeader(adminToken))
+      .send({ termName: 'SS2100', displayName: 'Summer 2100' })
+      .expect(201);
+
+    expect(created.body.success).toBe(true);
   });
 });
