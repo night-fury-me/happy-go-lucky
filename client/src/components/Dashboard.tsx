@@ -256,6 +256,11 @@ const Dashboard: React.FC = () => {
                       <DialogTitle>Confirm shutdown</DialogTitle>
                       <DialogDescription>
                         Do you really want to shut down the system?
+                        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                          After shutdown, the system enters read-only mode: all write
+                          operations will be rejected, but read requests will still
+                          work.
+                        </div>
                       </DialogDescription>
                     </DialogHeader>
 
