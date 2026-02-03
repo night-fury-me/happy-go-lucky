@@ -20,6 +20,7 @@ const ALLOW_DURING_SHUTDOWN_PATHS = new Set([
   '/admin/shutdown',
   '/admin/start',
   '/admin/shutdown/status',
+  '/session',
 ]);
 
 /**

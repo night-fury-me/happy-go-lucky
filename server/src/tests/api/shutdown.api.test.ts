@@ -79,6 +79,23 @@ describe('System shutdown API', () => {
     expect(second.body.message).toMatch(/already in progress/i);
   });
 
+  it('should still allow logging in during shutdown mode', async () => {
+    const adminToken = generateAdminToken();
+
+    await request(app)
+      .post('/admin/shutdown')
+      .set('Authorization', createAuthHeader(adminToken))
+      .send({})
+      .expect(202);
+
+    const loginResponse = await request(app)
+      .post('/session')
+      .send({ email: 'admin@test.com', password: 'Admin123!' })
+      .expect(200);
+
+    expect(loginResponse.body.token).toBeTruthy();
+  });
+
   it('should allow leaving shutdown mode', async () => {
     const adminToken = generateAdminToken();
 
