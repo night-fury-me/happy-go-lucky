@@ -114,7 +114,20 @@ function getValueByPath(obj: unknown, path: string): unknown {
   return current;
 }
 
-export class I18nService {
+/**
+ * i18n service abstraction.
+ *
+ * This follows the same design pattern as other services in this codebase
+ * (e.g. `IEmailService` + `ConsoleEmailService`): controllers/middleware
+ * depend on the interface, and a concrete implementation is injected.
+ */
+export interface II18nService {
+  readonly locale: Locale;
+  translate(key: string, ...args: unknown[]): string;
+  translate(req: unknown, key: string, ...args: unknown[]): string;
+}
+
+export class I18nService implements II18nService {
   public readonly locale: Locale;
   public readonly catalog: Catalog;
 
@@ -184,53 +197,10 @@ export class I18nService {
   }
 }
 
-export function createI18n(locale: unknown): I18nService {
+export function createI18n(locale: unknown): II18nService {
   return new I18nService(locale);
 }
 
-export function createI18nFromEnv(env: EnvLike = process.env as EnvLike): I18nService {
+export function createI18nFromEnv(env: EnvLike = process.env as EnvLike): II18nService {
   return I18nService.fromEnv(env);
-}
-
-let defaultI18n: I18nService | undefined;
-
-/**
- * Lazy default instance used by the module-level `translate(...)` function.
- *
- * This keeps imports cheap and makes tests easier (you can reset the singleton).
- */
-function getDefaultI18n(): I18nService {
-  defaultI18n ??= createI18nFromEnv();
-  return defaultI18n;
-}
-
-/**
- * Test helper: clears the memoized default instance so the next call to
- * `translate(...)` re-reads locale from env.
- */
-export function resetDefaultI18nForTests(): void {
-  defaultI18n = undefined;
-}
-
-/**
- * Convenience function for callers that don't want to instantiate `I18nService`.
- *
- * It forwards to the lazy default instance.
- */
-export function translate(key: string, ...args: unknown[]): string;
-export function translate(req: unknown, key: string, ...args: unknown[]): string;
-export function translate(reqOrKey: unknown, keyOrArg?: unknown, ...rest: unknown[]): string {
-  const i18n = getDefaultI18n();
-  const hasReq = typeof reqOrKey !== "string";
-
-  if (hasReq) {
-    const key = typeof keyOrArg === "string" ? keyOrArg : "";
-    return i18n.translate(reqOrKey, key, ...rest);
-  }
-
-  if (keyOrArg === undefined) {
-    return i18n.translate(reqOrKey);
-  }
-
-  return i18n.translate(reqOrKey, keyOrArg, ...rest);
 }

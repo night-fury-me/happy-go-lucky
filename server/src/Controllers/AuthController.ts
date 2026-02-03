@@ -14,7 +14,7 @@ import { User } from "../Models/User";
 import { Email } from "../ValueTypes/Email";
 import { IAppController } from "./IAppController";
 import { IEmailService } from "../Services/IEmailService";
-import { msgKey, translate } from "../Services/I18nService";
+import { II18nService, msgKey } from "../Services/I18nService";
 
 dotenv.config();
 
@@ -23,7 +23,11 @@ dotenv.config();
  * Manages user registration, login, password reset, and email confirmation.
  */
 export class AuthController implements IAppController {
-  constructor(private db: Database, private emailService: IEmailService) {}
+  constructor(
+    private db: Database,
+    private emailService: IEmailService,
+    private i18n: II18nService
+  ) {}
 
   /**
    * Initializes API routes for authentication.
@@ -45,26 +49,26 @@ export class AuthController implements IAppController {
     if (!name || !email || !passwordObj) {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.auth.fillInUsernameEmailPassword) });
+        .json({ message: this.i18n.translate(req, msgKey.auth.fillInUsernameEmailPassword) });
       return;
     }
 
     if (passwordObj.getStrength() < 3) {
       res.status(400).json({
-        message: translate(req, msgKey.auth.passwordStrengthRequirements),
+        message: this.i18n.translate(req, msgKey.auth.passwordStrengthRequirements),
       });
       return;
     }
 
     if (typeof email !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.auth.emailWrongFormat) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.auth.emailWrongFormat) });
       return;
     }
 
     if (name.length < 3) {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.auth.nameMinLength3) });
+        .json({ message: this.i18n.translate(req, msgKey.auth.nameMinLength3) });
       return;
     }
 
@@ -72,7 +76,7 @@ export class AuthController implements IAppController {
     try {
       validatedEmail = new Email(email as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
@@ -88,7 +92,7 @@ export class AuthController implements IAppController {
       u.setEmail(new Email(email));
       u.setPassword(hashedPassword);
       await writer.writeRoot(u);
-      res.status(201).json({ message: translate(req, msgKey.auth.userRegisteredSuccessfully) });
+      res.status(201).json({ message: this.i18n.translate(req, msgKey.auth.userRegisteredSuccessfully) });
 
       // Generate confirm email TOKEN
       const registeredUser = await oh.getUserByMail(email, this.db);
@@ -118,14 +122,18 @@ export class AuthController implements IAppController {
     const { email, password } = req.body;
     const passwordObj = Password.create(password);
     if (!email || !passwordObj || typeof email !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.auth.emailAndPasswordRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.auth.emailAndPasswordRequired) });
       return;
     }
 
     try {
       new Email(email as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
@@ -133,13 +141,15 @@ export class AuthController implements IAppController {
       const oh = new ObjectHandler();
       const user = await oh.getUserByMail(email, this.db);
       if (!user) {
-        res.status(400).json({ message: translate(req, msgKey.auth.invalidEmail) });
+        res.status(400).json({ message: this.i18n.translate(req, msgKey.auth.invalidEmail) });
         return;
       }
 
       const userPassword = user.getPassword();
       if (userPassword === null) {
-        res.status(400).json({ message: translate(req, msgKey.auth.noPasswordSetForUser) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.auth.noPasswordSetForUser) });
         return;
       } else {
         const isValidPassword = await comparePassword(
@@ -147,7 +157,9 @@ export class AuthController implements IAppController {
           userPassword
         );
         if (!isValidPassword) {
-          res.status(400).json({ message: translate(req, msgKey.auth.invalidPassword) });
+          res
+            .status(400)
+            .json({ message: this.i18n.translate(req, msgKey.auth.invalidPassword) });
           return;
         }
       }
@@ -157,16 +169,18 @@ export class AuthController implements IAppController {
       if (userStatus.getStatus() == UserStatusEnum.unconfirmed) {
         res
           .status(400)
-          .json({ message: translate(req, msgKey.auth.emailNotConfirmedContactAdmin) });
+          .json({
+            message: this.i18n.translate(req, msgKey.auth.emailNotConfirmedContactAdmin),
+          });
         return;
       } else if (userStatus.getStatus() == UserStatusEnum.suspended) {
         res.status(400).json({
-          message: translate(req, msgKey.auth.userSuspendedContactAdmin),
+          message: this.i18n.translate(req, msgKey.auth.userSuspendedContactAdmin),
         });
         return;
       } else if (userStatus.getStatus() == UserStatusEnum.removed) {
         res.status(400).json({
-          message: translate(req, msgKey.auth.userRemovedContactAdmin),
+          message: this.i18n.translate(req, msgKey.auth.userRemovedContactAdmin),
         });
         return;
       }
@@ -182,20 +196,24 @@ export class AuthController implements IAppController {
       });
     } catch (error) {
       console.error("Error during login:", error);
-      res.status(500).json({ message: translate(req, msgKey.auth.loginFailed) });
+      res.status(500).json({ message: this.i18n.translate(req, msgKey.auth.loginFailed) });
     }
   }
 
   async forgotPassword(req: Request, res: Response): Promise<void> {
     let email: Email;
     if (!req.body.email || typeof req.body.email !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.auth.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.auth.userEmailIsRequired) });
       return;
     }
     try {
       email = new Email(req.body.email as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
@@ -204,7 +222,7 @@ export class AuthController implements IAppController {
       const writer = new DatabaseWriter(this.db);
       const user = await oh.getUserByMail(email.toString(), this.db);
       if (!user) {
-        res.status(404).json({ message: translate(req, msgKey.auth.emailNotFound) });
+        res.status(404).json({ message: this.i18n.translate(req, msgKey.auth.emailNotFound) });
         return;
       }
 
@@ -219,10 +237,12 @@ export class AuthController implements IAppController {
 
       await this.sendPasswordResetEmail(email, token);
 
-      res.status(200).json({ message: translate(req, msgKey.auth.passwordResetEmailSent) });
+      res
+        .status(200)
+        .json({ message: this.i18n.translate(req, msgKey.auth.passwordResetEmailSent) });
     } catch (error) {
       console.error("Error in forgotPassword:", error);
-      res.status(500).json({ message: translate(req, msgKey.common.serverError) });
+      res.status(500).json({ message: this.i18n.translate(req, msgKey.common.serverError) });
     }
   }
 
@@ -233,7 +253,7 @@ export class AuthController implements IAppController {
     if (!token || !newPassword) {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.auth.tokenAndNewPasswordRequired) });
+        .json({ message: this.i18n.translate(req, msgKey.auth.tokenAndNewPasswordRequired) });
       return;
     }
 
@@ -247,7 +267,9 @@ export class AuthController implements IAppController {
       );
 
       if (!user) {
-        res.status(401).json({ message: translate(req, msgKey.auth.invalidOrExpiredResetToken) });
+        res
+          .status(401)
+          .json({ message: this.i18n.translate(req, msgKey.auth.invalidOrExpiredResetToken) });
         return;
       }
 
@@ -261,11 +283,13 @@ export class AuthController implements IAppController {
         u.getResetPasswordExpire() === null ||
         (u.getResetPasswordExpire() as number) < currentTime
       ) {
-        res.status(400).json({ message: translate(req, msgKey.auth.invalidOrExpiredToken) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.auth.invalidOrExpiredToken) });
         return;
       } else if (newPasswordObj.getStrength() < 3) {
         res.status(400).json({
-          message: translate(req, msgKey.auth.passwordStrengthRequirements),
+          message: this.i18n.translate(req, msgKey.auth.passwordStrengthRequirements),
         });
         return;
       }
@@ -276,10 +300,10 @@ export class AuthController implements IAppController {
       u.setResetPasswordToken(null);
       await writer.writeRoot(u);
 
-      res.status(200).json({ message: translate(req, msgKey.auth.passwordHasBeenReset) });
+      res.status(200).json({ message: this.i18n.translate(req, msgKey.auth.passwordHasBeenReset) });
     } catch (error) {
       console.error("Error in resetPassword:", error);
-      res.status(500).json({ message: translate(req, msgKey.common.serverError) });
+      res.status(500).json({ message: this.i18n.translate(req, msgKey.common.serverError) });
     }
   }
 
@@ -287,7 +311,7 @@ export class AuthController implements IAppController {
     const { token } = req.body;
 
     if (!token) {
-      res.status(400).json({ message: translate(req, msgKey.auth.tokenIsRequired) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.auth.tokenIsRequired) });
       return;
     }
 
@@ -304,7 +328,9 @@ export class AuthController implements IAppController {
       if (!user) {
         res
           .status(401)
-          .json({ message: translate(req, msgKey.auth.invalidOrExpiredConfirmationToken) });
+          .json({
+            message: this.i18n.translate(req, msgKey.auth.invalidOrExpiredConfirmationToken),
+          });
         return;
       }
 
@@ -314,7 +340,9 @@ export class AuthController implements IAppController {
       console.log("User retrieved from database:", user);
 
       if (user.confirmEmailExpire < currentTime) {
-        res.status(400).json({ message: translate(req, msgKey.auth.invalidOrExpiredToken) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.auth.invalidOrExpiredToken) });
         return;
       }
 
@@ -327,23 +355,29 @@ export class AuthController implements IAppController {
       u.setConfirmEmailExpire(null);
       await writer.writeRoot(u);
 
-      res.status(200).json({ message: translate(req, msgKey.auth.emailHasBeenConfirmed) });
+      res
+        .status(200)
+        .json({ message: this.i18n.translate(req, msgKey.auth.emailHasBeenConfirmed) });
     } catch (error) {
       console.error("Error in confirmEmail:", error);
-      res.status(500).json({ message: translate(req, msgKey.common.serverError) });
+      res.status(500).json({ message: this.i18n.translate(req, msgKey.common.serverError) });
     }
   }
 
   async sendConfirmationEmail(req: Request, res: Response): Promise<void> {
     let email: Email;
     if (!req.body.email || typeof req.body.email !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.auth.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.auth.userEmailIsRequired) });
       return;
     }
     try {
       email = new Email(req.body.email as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
     try {
@@ -351,7 +385,7 @@ export class AuthController implements IAppController {
       const writer = new DatabaseWriter(this.db);
       const user = await oh.getUserByMail(email.toString(), this.db);
       if (!user) {
-        res.status(400).json({ message: translate(req, msgKey.common.userNotFound) });
+        res.status(400).json({ message: this.i18n.translate(req, msgKey.common.userNotFound) });
         return;
       }
       let st: string = user.getStatus();
@@ -359,7 +393,9 @@ export class AuthController implements IAppController {
       if (userStatus.getStatus() != UserStatusEnum.unconfirmed) {
         res
           .status(400)
-          .json({ message: translate(req, msgKey.auth.userNotFoundOrNotUnconfirmed) });
+          .json({
+            message: this.i18n.translate(req, msgKey.auth.userNotFoundOrNotUnconfirmed),
+          });
         return;
       }
 
@@ -371,10 +407,14 @@ export class AuthController implements IAppController {
       await writer.writeRoot(user);
       await this.sendConfirmEmail(email, token);
 
-      res.status(200).json({ message: translate(req, msgKey.auth.confirmationEmailSent) });
+      res
+        .status(200)
+        .json({ message: this.i18n.translate(req, msgKey.auth.confirmationEmailSent) });
     } catch (error) {
       console.error("Error sending confirmation email:", error);
-      res.status(500).json({ message: translate(req, msgKey.auth.failedToSendConfirmationEmail) });
+      res
+        .status(500)
+        .json({ message: this.i18n.translate(req, msgKey.auth.failedToSendConfirmationEmail) });
     }
   }
 
@@ -384,8 +424,8 @@ export class AuthController implements IAppController {
 
     await this.emailService.sendEmail(
       email.toString(),
-      translate(msgKey.auth.confirmEmailSubject),
-      translate(msgKey.auth.confirmEmailBody, confirmedLink)
+      this.i18n.translate(msgKey.auth.confirmEmailSubject),
+      this.i18n.translate(msgKey.auth.confirmEmailBody, confirmedLink)
     );
   }
 
@@ -395,8 +435,8 @@ export class AuthController implements IAppController {
 
     await this.emailService.sendEmail(
       email.toString(),
-      translate(msgKey.auth.passwordResetSubject),
-      translate(msgKey.auth.passwordResetBody, resetLink)
+      this.i18n.translate(msgKey.auth.passwordResetSubject),
+      this.i18n.translate(msgKey.auth.passwordResetBody, resetLink)
     );
   }
 }

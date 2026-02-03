@@ -4,7 +4,7 @@ import { DatabaseHelpers } from "../Models/DatabaseHelpers";
 import { Email } from "../ValueTypes/Email";
 import { IAppController } from "./IAppController";
 import { IEmailService } from "../Services/IEmailService";
-import { msgKey, translate } from "../Services/I18nService";
+import { II18nService, msgKey } from "../Services/I18nService";
 
 /**
  * Controller for handling project-related HTTP requests.
@@ -12,7 +12,11 @@ import { msgKey, translate } from "../Services/I18nService";
  * (happiness metrics, sprints, standups).
  */
 export class ProjectController implements IAppController {
-  constructor(private db: Database, private emailService: IEmailService) {}
+  constructor(
+    private db: Database,
+    private emailService: IEmailService,
+    private i18n: II18nService
+  ) {}
 
   /**
    * Initializes API routes for project management.
@@ -44,7 +48,7 @@ export class ProjectController implements IAppController {
     const { courseName } = req.query;
 
     if (!courseName) {
-      res.status(400).json({ message: translate(req, msgKey.project.courseIdIsRequired) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.project.courseIdIsRequired) });
       return;
     }
 
@@ -54,7 +58,7 @@ export class ProjectController implements IAppController {
         courseId = await DatabaseHelpers.getCourseIdFromName(this.db, courseName.toString());
       } catch (error) {
         if (error instanceof Error && error.message.includes("Unknown Course Name!")) {
-          res.status(404).json({ message: translate(req, msgKey.common.courseNotFound) });
+          res.status(404).json({ message: this.i18n.translate(req, msgKey.common.courseNotFound) });
           return;
         }
         throw error;
@@ -67,7 +71,11 @@ export class ProjectController implements IAppController {
       res
         .status(500)
         .json({
-          message: translate(req, msgKey.project.failedToRetrieveProjectsForCourse, courseName),
+          message: this.i18n.translate(
+            req,
+            msgKey.project.failedToRetrieveProjectsForCourse,
+            courseName
+          ),
           error,
         });
     }
@@ -79,7 +87,9 @@ export class ProjectController implements IAppController {
     if (!newCourseName || !newProjectName) {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.project.fillInProjectGroupAndProjectName) });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.fillInProjectGroupAndProjectName),
+        });
       return;
     }
 
@@ -91,10 +101,15 @@ export class ProjectController implements IAppController {
         newCourseId,
         projectId,
       ]);
-      res.status(201).json({ message: translate(req, msgKey.project.projectEditedSuccessfully) });
+      res
+        .status(201)
+        .json({ message: this.i18n.translate(req, msgKey.project.projectEditedSuccessfully) });
     } catch (error) {
       console.error("Error during project edition:", error);
-      res.status(500).json({ message: translate(req, msgKey.project.projectEditionFailed), error });
+      res.status(500).json({
+        message: this.i18n.translate(req, msgKey.project.projectEditionFailed),
+        error,
+      });
     }
   }
 
@@ -102,7 +117,7 @@ export class ProjectController implements IAppController {
     const { projectName } = req.query;
 
     if (!projectName) {
-      res.status(400).json({ message: translate(req, msgKey.project.projectNameIsRequired) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.project.projectNameIsRequired) });
       return;
     }
 
@@ -119,11 +134,14 @@ export class ProjectController implements IAppController {
       } else {
         res
           .status(404)
-          .json({ message: translate(req, msgKey.project.courseNotFoundForProject) });
+          .json({ message: this.i18n.translate(req, msgKey.project.courseNotFoundForProject) });
       }
     } catch (error) {
       console.error("Error fetching course for project:", error);
-      res.status(500).json({ message: translate(req, msgKey.project.failedToFetchCourse), error });
+      res.status(500).json({
+        message: this.i18n.translate(req, msgKey.project.failedToFetchCourse),
+        error,
+      });
     }
   }
 
@@ -132,20 +150,26 @@ export class ProjectController implements IAppController {
 
     let userEmail: Email;
     if (!req.query.email || typeof req.query.email !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.project.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.project.userEmailIsRequired) });
       return;
     }
     try {
       userEmail = new Email(req.query.email as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
     if (!projectName) {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.project.projectNameAndUserEmailRequired) });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.projectNameAndUserEmailRequired),
+        });
       return;
     }
 
@@ -160,7 +184,7 @@ export class ProjectController implements IAppController {
       );
 
       if (!role) {
-        res.status(404).json({ message: translate(req, msgKey.project.roleNotFound) });
+        res.status(404).json({ message: this.i18n.translate(req, msgKey.project.roleNotFound) });
         return;
       }
       res.json({ role: role.role });
@@ -168,7 +192,10 @@ export class ProjectController implements IAppController {
       console.error("Error retrieving project role", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToRetrieveProjectRole), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToRetrieveProjectRole),
+          error,
+        });
     }
   }
 
@@ -177,18 +204,22 @@ export class ProjectController implements IAppController {
 
     let memberEmail: Email;
     if (!memberEmailStr || typeof memberEmailStr !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.project.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.project.userEmailIsRequired) });
       return;
     }
     try {
       memberEmail = new Email(memberEmailStr);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
     if (!memberRole) {
-      res.status(400).json({ message: translate(req, msgKey.project.fillInYourRole) });
+      res.status(400).json({ message: this.i18n.translate(req, msgKey.project.fillInYourRole) });
       return;
     }
 
@@ -198,7 +229,7 @@ export class ProjectController implements IAppController {
         projectId = await DatabaseHelpers.getProjectIdFromName(this.db, projectName);
       } catch (error) {
         if (error instanceof Error && error.message.includes("Unknown Project Name!")) {
-          res.status(404).json({ message: translate(req, msgKey.common.projectNotFound) });
+          res.status(404).json({ message: this.i18n.translate(req, msgKey.common.projectNotFound) });
           return;
         }
         throw error;
@@ -210,7 +241,9 @@ export class ProjectController implements IAppController {
         [userId, projectId]
       );
       if (isMember) {
-        res.status(400).json({ message: translate(req, msgKey.project.alreadyJoinedProject) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.project.alreadyJoinedProject) });
         return;
       }
 
@@ -221,10 +254,13 @@ export class ProjectController implements IAppController {
       ]);
       res
         .status(201)
-        .json({ message: translate(req, msgKey.project.joinedProjectSuccessfully) });
+        .json({ message: this.i18n.translate(req, msgKey.project.joinedProjectSuccessfully) });
     } catch (error) {
       console.error("Error during joining project:", error);
-      res.status(500).json({ message: translate(req, msgKey.project.failedToJoinProject), error });
+      res.status(500).json({
+        message: this.i18n.translate(req, msgKey.project.failedToJoinProject),
+        error,
+      });
     }
   }
 
@@ -237,7 +273,7 @@ export class ProjectController implements IAppController {
         projectId = await DatabaseHelpers.getProjectIdFromName(this.db, projectName);
       } catch (error) {
         if (error instanceof Error && error.message.includes("Unknown Project Name!")) {
-          res.status(404).json({ message: translate(req, msgKey.common.projectNotFound) });
+          res.status(404).json({ message: this.i18n.translate(req, msgKey.common.projectNotFound) });
           return;
         }
         throw error;
@@ -249,7 +285,9 @@ export class ProjectController implements IAppController {
         [userId, projectId]
       );
       if (!isMember) {
-        res.status(400).json({ message: translate(req, msgKey.project.notMemberOfProject) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.project.notMemberOfProject) });
         return;
       }
       await this.db.run("DELETE FROM user_projects WHERE userId = ? AND projectId = ?", [
@@ -257,23 +295,32 @@ export class ProjectController implements IAppController {
         projectId,
       ]);
 
-      res.status(200).json({ message: translate(req, msgKey.project.leftProjectSuccessfully) });
+      res
+        .status(200)
+        .json({ message: this.i18n.translate(req, msgKey.project.leftProjectSuccessfully) });
     } catch (error) {
       console.error("Error during leaving project:", error);
-      res.status(500).json({ message: translate(req, msgKey.project.failedToLeaveProject), error });
+      res.status(500).json({
+        message: this.i18n.translate(req, msgKey.project.failedToLeaveProject),
+        error,
+      });
     }
   }
 
   async getUserProjects(req: Request, res: Response): Promise<void> {
     let userEmail: Email;
     if (!req.query.userEmail || typeof req.query.userEmail !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.project.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.project.userEmailIsRequired) });
       return;
     }
     try {
       userEmail = new Email(req.query.userEmail as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
@@ -291,20 +338,27 @@ export class ProjectController implements IAppController {
       console.error("Error during retrieving user projects:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToRetrieveUserProjects), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToRetrieveUserProjects),
+          error,
+        });
     }
   }
 
   async getEnrolledCourses(req: Request, res: Response): Promise<void> {
     let userEmail: Email;
     if (!req.query.userEmail || typeof req.query.userEmail !== "string") {
-      res.status(400).json({ message: translate(req, msgKey.project.userEmailIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.project.userEmailIsRequired) });
       return;
     }
     try {
       userEmail = new Email(req.query.userEmail as string);
     } catch {
-      res.status(400).json({ message: translate(req, msgKey.common.invalidEmailAddress) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.common.invalidEmailAddress) });
       return;
     }
 
@@ -323,7 +377,10 @@ export class ProjectController implements IAppController {
       console.error("Error during retrieving courses of user:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToRetrieveCoursesOfUser), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToRetrieveCoursesOfUser),
+          error,
+        });
     }
   }
 
@@ -334,7 +391,9 @@ export class ProjectController implements IAppController {
     if (!submissionDateId || typeof submissionDateId !== 'number') {
       res
         .status(400)
-        .json({ message: translate(req, msgKey.project.submissionDateIdRequiredNumber) });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.submissionDateIdRequiredNumber),
+        });
       return;
     }
 
@@ -345,7 +404,9 @@ export class ProjectController implements IAppController {
         [submissionDateId]
       );
       if (!submission) {
-        res.status(404).json({ message: translate(req, msgKey.project.submissionDateNotFound) });
+        res
+          .status(404)
+          .json({ message: this.i18n.translate(req, msgKey.project.submissionDateNotFound) });
         return;
       }
 
@@ -360,7 +421,9 @@ export class ProjectController implements IAppController {
       );
 
       if (!projectId || !userId) {
-        res.status(404).json({ message: translate(req, msgKey.project.projectOrUserNotFound) });
+        res
+          .status(404)
+          .json({ message: this.i18n.translate(req, msgKey.project.projectOrUserNotFound) });
         return;
       }
 
@@ -380,12 +443,17 @@ export class ProjectController implements IAppController {
 
       res
         .status(200)
-        .json({ message: translate(req, msgKey.project.happinessUpdatedSuccessfully) });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.happinessUpdatedSuccessfully),
+        });
     } catch (error) {
       console.error("Error updating happiness:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToUpdateHappiness), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToUpdateHappiness),
+          error,
+        });
     }
   }
 
@@ -406,7 +474,10 @@ export class ProjectController implements IAppController {
       console.error("Error fetching happiness data:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToFetchHappinessData), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToFetchHappinessData),
+          error,
+        });
     }
   }
 
@@ -414,7 +485,9 @@ export class ProjectController implements IAppController {
     const { projectName } = req.query;
 
     if (!projectName || typeof projectName !== 'string') {
-      res.status(400).json({ message: translate(req, msgKey.project.projectNameIsRequired) });
+      res
+        .status(400)
+        .json({ message: this.i18n.translate(req, msgKey.project.projectNameIsRequired) });
       return;
     }
 
@@ -426,7 +499,7 @@ export class ProjectController implements IAppController {
       );
 
       if (!project) {
-        res.status(404).json({ message: translate(req, msgKey.common.projectNotFound) });
+        res.status(404).json({ message: this.i18n.translate(req, msgKey.common.projectNotFound) });
         return;
       }
 
@@ -439,7 +512,9 @@ export class ProjectController implements IAppController {
       );
 
       if (!schedule) {
-        res.status(404).json({ message: translate(req, msgKey.project.noScheduleFoundForCourse) });
+        res
+          .status(404)
+          .json({ message: this.i18n.translate(req, msgKey.project.noScheduleFoundForCourse) });
         return;
       }
 
@@ -457,7 +532,9 @@ export class ProjectController implements IAppController {
       if (!nextSubmission) {
         res
           .status(404)
-          .json({ message: translate(req, msgKey.project.noFutureSubmissionDatesAvailable) });
+          .json({
+            message: this.i18n.translate(req, msgKey.project.noFutureSubmissionDatesAvailable),
+          });
         return;
       }
 
@@ -470,7 +547,10 @@ export class ProjectController implements IAppController {
       console.error("Error fetching available submissions:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToFetchAvailableSubmissions), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToFetchAvailableSubmissions),
+          error,
+        });
     }
   }
 
@@ -489,7 +569,9 @@ export class ProjectController implements IAppController {
       console.log(`Found ${members.length} members for project "${projectName}":`, members);
 
       if (members.length === 0) {
-        res.status(400).json({ message: translate(req, msgKey.project.noMembersInProjectGroup) });
+        res
+          .status(400)
+          .json({ message: this.i18n.translate(req, msgKey.project.noMembersInProjectGroup) });
         return;
       }
 
@@ -497,18 +579,30 @@ export class ProjectController implements IAppController {
 
       await this.emailService.sendEmail(
         recipientEmails,
-        translate(req, msgKey.project.standupEmailSubject, projectName),
-        translate(req, msgKey.project.standupEmailBody, userName, doneText, plansText, challengesText)
+        this.i18n.translate(req, msgKey.project.standupEmailSubject, projectName),
+        this.i18n.translate(
+          req,
+          msgKey.project.standupEmailBody,
+          userName,
+          doneText,
+          plansText,
+          challengesText
+        )
       );
 
       res
         .status(200)
-        .json({ message: translate(req, msgKey.project.standupEmailSentSuccessfully) });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.standupEmailSentSuccessfully),
+        });
     } catch (error) {
       console.error("Error sending standup email:", error);
       res
         .status(500)
-        .json({ message: translate(req, msgKey.project.failedToSendStandupEmail), error });
+        .json({
+          message: this.i18n.translate(req, msgKey.project.failedToSendStandupEmail),
+          error,
+        });
     }
   }
 }
