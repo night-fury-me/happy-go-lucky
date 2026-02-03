@@ -15,6 +15,13 @@ import { SmtpEmailService } from './Services/SmtpEmailService';
 import { LocalMtaEmailService } from './Services/LocalMtaEmailService';
 import { EMAIL_CONFIG } from './Config/email';
 
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const ALLOW_DURING_SHUTDOWN_PATHS = new Set([
+  '/admin/shutdown',
+  '/admin/start',
+  '/admin/shutdown/status',
+]);
+
 /**
  * Creates and configures an Express application with all routes
  * @param db Database instance to use for all endpoints
@@ -35,19 +42,17 @@ export function createApp(db: Database): Application {
       return;
     }
 
-    const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
-    const allowDuringShutdown = new Set([
-      "/admin/shutdown",
-      "/admin/start",
-      "/admin/shutdown/status",
-    ]);
-
-    if (allowDuringShutdown.has(req.path) || safeMethods.has(req.method.toUpperCase())) {
+    if (
+      ALLOW_DURING_SHUTDOWN_PATHS.has(req.path) ||
+      SAFE_METHODS.has(req.method.toUpperCase())
+    ) {
       next();
       return;
     }
 
-    res.status(503).json({ message: "Writes are disabled while server is shutting down" });
+    res
+      .status(503)
+      .json({ message: 'Writes are disabled while server is shutting down' });
   });
 
   app.get('/', (req, res) => {

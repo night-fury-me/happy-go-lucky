@@ -139,12 +139,7 @@ const Dashboard: React.FC = () => {
       setShutdownInProgress(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Shutdown failed";
-
-      if (message.toLowerCase().includes("shutting down")) {
-        setShutdownInProgress(true);
-      } else {
-        setShutdownError(message);
-      }
+      setShutdownError(message);
     } finally {
       setShutdownPending(false);
     }
