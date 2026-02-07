@@ -359,8 +359,9 @@ These endpoints are implemented in `ProjectController` and are mostly **not** wr
 
 ### `GET /user/role` / `POST /user/role`
 
+- **Auth:** Requires authenticated session. `POST /user/role` is **admin-only** (caller must have `ADMIN` role).
 - **GET Query**: `userEmail=<email>` → returns `{ userRole: "ADMIN" | "USER" }`
-- **POST Body**: `{ email: string, role: string }` → sets `users.userRole`
+- **POST Body**: `{ email: string, role: string }` → for admins to update another user's `users.userRole`
 
 ## Legacy endpoints
 
