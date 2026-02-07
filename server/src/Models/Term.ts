@@ -26,7 +26,7 @@ export class Term implements Serializable {
     if (!termNameStr) {
       this.termName = null;
     } else {
-      const parsed = TermName.tryParse(termNameStr);
+      const parsed = TermName.tryFromString(termNameStr);
       if (parsed.ok) {
         this.termName = parsed.value;
         if (parsed.wasLegacy) {

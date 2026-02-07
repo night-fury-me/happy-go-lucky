@@ -63,7 +63,7 @@ export class TermController implements IAppController {
 
       let parsedTermName: TermName;
       try {
-        parsedTermName = new TermName(termName);
+        parsedTermName = TermName.fromString(termName);
       } catch {
         res.status(400).json({
           success: false,

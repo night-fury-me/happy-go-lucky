@@ -33,7 +33,7 @@ describe('Basic serializer read/write test', async () => {
 
   it('Create new Course and Project', async () => {
     const tm: TermManager = new TermManager(db, oh);
-    const term = await tm.createTerm(new TermName("WS24/25"), "Winter 2024/25");
+    const term = await tm.createTerm(TermName.fromString("WS24/25"), "Winter 2024/25");
     expect(term.getId()).toBeDefined();
 
     const cm: CourseManager = new CourseManager(db, oh);

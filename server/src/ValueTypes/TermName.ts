@@ -39,14 +39,14 @@ export class TermName {
    * ranges like "WS2025/24"). Avoid using this for user input.
    */
   constructor(input: string, options?: { allowLegacy?: boolean }) {
-    const canonical = TermName.toCanonical(input);
+    const canonical = TermName.canonicalize(input);
     if (canonical) {
       this.value = canonical;
       return;
     }
 
     if (options?.allowLegacy) {
-      const legacyCanonical = TermName.toCanonicalLegacy(input);
+      const legacyCanonical = TermName.canonicalizeLegacy(input);
       IllegalArgumentException.assert(Boolean(legacyCanonical), 'Invalid term name');
       this.value = legacyCanonical;
       return;
@@ -54,6 +54,16 @@ export class TermName {
 
     IllegalArgumentException.assert(false, 'Invalid term name');
     this.value = '';
+  }
+
+  /**
+   * Parse a string into a TermName (throws on invalid input).
+   *
+   * Naming rationale: callers shouldn't need to care whether we store
+   * canonical values internally; they just want to construct from input.
+   */
+  static fromString(input: string): TermName {
+    return new TermName(input);
   }
 
   /**
@@ -66,8 +76,8 @@ export class TermName {
    * - First tries strict canonicalization.
    * - If that fails, tries legacy canonicalization (range chronology not enforced).
    */
-  static tryParse(input: string): TermNameParseResult {
-    const strictCanonical = TermName.toCanonical(input);
+  static tryFromString(input: string): TermNameParseResult {
+    const strictCanonical = TermName.canonicalize(input);
     if (strictCanonical) {
       return {
         ok: true,
@@ -76,7 +86,7 @@ export class TermName {
       };
     }
 
-    const legacyCanonical = TermName.toCanonicalLegacy(input);
+    const legacyCanonical = TermName.canonicalizeLegacy(input);
     if (legacyCanonical) {
       return {
         ok: true,
@@ -88,7 +98,7 @@ export class TermName {
     return { ok: false, reason: 'invalid' };
   }
 
-  static toCanonical(input: string): string {
+  private static canonicalize(input: string): string {
     const trimmed = input.trim();
     const match = trimmed.match(TermName.TERM_REGEX);
     if (!match) {
@@ -132,7 +142,7 @@ export class TermName {
    * This is only intended as a compatibility layer when reading existing
    * persisted data created before stricter validation was enforced.
    */
-  private static toCanonicalLegacy(input: string): string {
+  private static canonicalizeLegacy(input: string): string {
     const trimmed = input.trim();
     const match = trimmed.match(TermName.TERM_REGEX);
     if (!match) {
