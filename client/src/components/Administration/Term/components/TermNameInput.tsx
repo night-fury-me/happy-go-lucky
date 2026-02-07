@@ -73,13 +73,14 @@ export const TermNameInput: React.FC<TermNameInputProps> = ({
           setTouched(true);
           setIsFocused(false);
 
+          // On blur, we stop allowing intermediate invalid states and either:
+          // - canonicalize (if valid), or
+          // - report null upstream (if invalid/empty)
           const result = parseTermName(text);
           if (result.ok) {
             // Canonicalize display on blur (but not during typing)
             setText(result.value);
             onChange(result.value);
-          } else if (!text.trim()) {
-            onChange(null);
           } else {
             onChange(null);
           }
