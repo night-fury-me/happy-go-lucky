@@ -5,6 +5,9 @@ describe("parseTermName", () => {
   it("accepts WS/SS short forms", () => {
     expect(parseTermName("WS24")).toEqual({ ok: true, value: "WS2024" });
     expect(parseTermName("ss25")).toEqual({ ok: true, value: "SS2025" });
+
+    // For years >= 2100, the 4-digit year must be provided.
+    expect(parseTermName("WS2100")).toEqual({ ok: true, value: "WS2100" });
   });
 
   it("accepts long season names", () => {

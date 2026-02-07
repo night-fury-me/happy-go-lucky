@@ -5,6 +5,9 @@ describe('TermName', () => {
   it('should accept WS/SS short forms', () => {
     expect(new TermName('WS24').toString()).toBe('WS2024');
     expect(new TermName('ss25').toString()).toBe('SS2025');
+
+    // For years >= 2100, the 4-digit year must be provided.
+    expect(new TermName('WS2100').toString()).toBe('WS2100');
   });
 
   it('should accept long season names', () => {

@@ -26,6 +26,9 @@ function expectedNextYear2(year4: string): string {
  * Normalize a year token into a 4-digit year.
  * - "24"   -> "2024"
  * - "2024" -> "2024"
+ *
+ * Note: 2-digit years are interpreted as 2000-2099.
+ * For years >= 2100, users must enter the 4-digit year explicitly (e.g. "WS2100").
  */
 function normalizeYear4(year: string): string {
   if (/^\d{4}$/.test(year)) return year;

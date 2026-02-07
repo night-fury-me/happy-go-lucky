@@ -88,6 +88,8 @@ export class TermName {
       return year;
     }
     if (/^\d{2}$/.test(year)) {
+      // Note: 2-digit years are interpreted as 2000-2099.
+      // For years >= 2100, users must enter the 4-digit year explicitly (e.g. "WS2100").
       return `20${year}`;
     }
     return '';
