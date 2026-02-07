@@ -312,13 +312,14 @@ These endpoints are implemented in `ProjectController` and are mostly **not** wr
 
 ### `GET /getUsers` — List all users
 
-- **Auth:** none
-- **Response:** `200` raw array of user rows
+- **Auth:** admin (JWT)
+- **Response:** `200` array of sanitized user objects (sensitive fields like password hashes and tokens omitted)
 
 ### `GET /user/status` — Filter users by status
 
+- **Auth:** admin (JWT)
 - **Query**: `status=<confirmed|unconfirmed|suspended|removed>`
-- **Response:** `200` raw array
+- **Response:** `200` array of sanitized user objects (sensitive fields like password hashes and tokens omitted)
 
 ### `POST /user/status` — Update a user’s status
 
